@@ -1,13 +1,20 @@
 import * as THREE from "three";
+import { degToRad } from "three/src/math/MathUtils.js";
 
 class Page {
-  constructor(public id: number, public image: string, public index: number) {
+  constructor(
+    public id: number,
+    public image: string,
+    public index: number,
+    public page: THREE.Mesh | null
+  ) {
     this.id = id;
     this.image = image;
     this.index = index;
+    this.page = null;
   }
 
-  createPage(): { mesh: THREE.SkinnedMesh; helper: THREE.SkeletonHelper } {
+  createPage(): THREE.Mesh {
     const PAGE_WIDTH: number = 16;
     const PAGE_HEIGHT: number = 9;
     const PAGE_DEPTH: number = 0.025;
@@ -25,64 +32,55 @@ class Page {
       2
     );
 
+    pageGeometry.translate(PAGE_WIDTH / 2, 0, 0);
+
     // material setting
-    const pageMaterial: THREE.MeshBasicMaterial = new THREE.MeshBasicMaterial({
-      color: 0x00ff00,
-    });
-
-    // bone setting - 複数のボーンを作成
-    const bones: THREE.Bone[] = [];
-
-    // ルートボーンを作成
-    const rootBone = new THREE.Bone();
-    rootBone.position.set(-PAGE_WIDTH / 2, 0, 0);
-    bones.push(rootBone);
-
-    // セグメント数に応じてボーンを作成
-    for (let i = 1; i <= PAGE_SEGMENTS; i++) {
-      const bone = new THREE.Bone();
-      bone.position.set(PAGE_SEGMENT_WIDTH, 0, 0);
-      bones[i - 1].add(bone);
-      bones.push(bone);
-    }
-
-    // スキンインデックスとウェイトを設定
-    const position = pageGeometry.attributes.position;
-    const vertex = new THREE.Vector3();
-    const skinIndices: number[] = [];
-    const skinWeights: number[] = [];
-
-    for (let i = 0; i < position.count; i++) {
-      vertex.fromBufferAttribute(position, i);
-
-      const x = (vertex.x + PAGE_WIDTH / 2);
-      const skinIndex = Math.floor(x / PAGE_SEGMENT_WIDTH);
-      const skinWeight = (x % PAGE_SEGMENT_WIDTH) / PAGE_SEGMENT_WIDTH;
-
-      // インデックスが範囲内であることを確認
-      const index1 = Math.min(skinIndex, PAGE_SEGMENTS);
-      const index2 = Math.min(skinIndex + 1, PAGE_SEGMENTS);
-
-      skinIndices.push(index1, index2, 0, 0);
-      skinWeights.push(1 - skinWeight, skinWeight, 0, 0);
-    }
-
-    pageGeometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
-    pageGeometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4));
+    const pageMaterial: THREE.MeshBasicMaterial[] = [
+      new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+      }),
+      new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+      }),
+      new THREE.MeshBasicMaterial({
+        color: 0x0000ff,
+      }),
+      new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+      }),
+      new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+      }),
+      new THREE.MeshBasicMaterial({
+        color: 0x0000ff,
+      }),
+    ];
 
     // mesh create
-    const page = new THREE.SkinnedMesh(pageGeometry, pageMaterial);
+    this.page = new THREE.Mesh(pageGeometry, pageMaterial);
+    this.page.position.set(0, 0, -this.index * PAGE_DEPTH);
+    this.page.rotation.y = Math.PI / 2;
+    this.page.castShadow = true;
+    this.page.receiveShadow = true;
+    this.page.frustumCulled = false;
 
-    // skelton
-    const skeleton = new THREE.Skeleton(bones);
-    page.add(bones[0]); // ルートボーンを追加
-    page.bind(skeleton);
+    return this.page;
+  }
 
-    // ボーンヘルパーを作成（可視化）
-    const helper = new THREE.SkeletonHelper(page);
+  updatePage(activePage: number) {
+    console.log(this.index, activePage);
+    if (!this.page) return;
+    const PAGE_ROTATION_Y: number =
+      activePage > this.index ? -Math.PI / 2 : Math.PI / 2;
+    this.page.rotation.y = this.lerp(
+      this.page.rotation.y,
+      PAGE_ROTATION_Y,
+      0.05
+    );
+  }
 
-
-    return {mesh: page , helper : helper };
+  lerp(start: number, end: number, t: number) {
+    return start + (end - start) * t;
   }
 }
 

@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import Book from "./components/book";
+import Page from "./components/page";
 
 (() => {
   console.log(THREE);
@@ -9,7 +10,7 @@ import Book from "./components/book";
   const scene = new THREE.Scene();
 
   // 2. camera
-  const PERSPECTIVE: number = 20;
+  const PERSPECTIVE: number = 10;
   const FOV: number = 60;
   const ASPECT_RATIO: number = window.innerWidth / window.innerHeight;
   const NEAR: number = 0.1;
@@ -43,15 +44,34 @@ import Book from "./components/book";
   );
 
   // 5. mesh
-  const book: Book = new Book();
+  const book: Book = new Book([], null);
   const bookGroup: THREE.Group = book.createPages();
   scene.add(bookGroup);
+
+  // book anime
+  let opened: boolean = false;
+  let activePage: number = 0;
+
+  const navButtons: NodeListOf<HTMLElement> =
+    document.querySelectorAll(".nav button");
+
+  navButtons.forEach((button) => {
+    button.addEventListener("mouseenter", () => {
+      activePage = Number(button.dataset.page);
+    });
+  });
 
   // 6. animate
   const animate = () => {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
     controls.update();
+    if (activePage === 0 || activePage === 9) {
+      opened = false;
+    } else {
+      opened = true;
+    }
+    book.updatePages(activePage);
   };
   animate();
 })();

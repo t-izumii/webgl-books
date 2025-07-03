@@ -31,6 +31,10 @@ const pageDatas: { id: number; image: string }[] = [
     id: 8,
     image: "https://via.placeholder.com/150",
   },
+  {
+    id: 9,
+    image: "https://via.placeholder.com/150",
+  },
 ];
 
 export default pageDatas;
