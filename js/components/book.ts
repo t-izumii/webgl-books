@@ -8,7 +8,10 @@ class Book {
 
     pageDatas.map((data, index) => {
       const page: Page = new Page(data.id, data.image, index);
-      bookGroup.add(page.createPage());
+      const { mesh, helper } = page.createPage();
+
+      bookGroup.add(mesh);
+      bookGroup.add(helper);
     });
     return bookGroup;
   }
